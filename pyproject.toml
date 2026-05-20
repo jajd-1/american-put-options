@@ -1,0 +1,16 @@
+[project]
+name = "american-put-options"
+version = "0.1.0"
+description = "Numerical implementation and study of American put option pricing as a free boundary parabolic PDE problem."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "matplotlib>=3.8",
+    "statsmodels>=0.14",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
