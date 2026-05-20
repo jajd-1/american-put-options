@@ -30,15 +30,15 @@ which can be solved explicitly and transformed back to the original variables.
 
 ## American put options
 
-An American put option gives the holder the additional flexibility to exercise the option at any time before maturity. Rather than just the terminal condition $V(S,T) = (K-S)^+$, the following condition must be satisfied by the option price at all times $t\leq T$: 
+An American put option gives the holder the additional flexibility to exercise the option at any time before maturity. The first change required in the PDE formulation is the boundary condition at $S=0$: since one no longer has to wait until maturity, an American put option is simply worth its strike price if the stock price hits zero, i.e. $V(0,t) = K$. The second change is more interesting: rather than just the terminal condition $V(S,T) = (K-S)^+$, the option price must also satisfy
 
 $$V(S,t) \geq (K-S)^+.$$
 
-Indeed, if this weren't the case then there would be an arbitrage opportunity: one could buy the asset at price $S$, purchase the put option at price $V$ and immediately exercise it to sell the asset at price $K$, resulting in a profit of $K - S - V > 0$. 
+at all times $t \leq T$. Indeed, if this weren't the case then there would be an arbitrage opportunity: one could buy the asset at price $S$, purchase the put option at price $V$ and immediately exercise it to sell the asset at price $K$, resulting in a profit of $K - S - V > 0$.
 
-Thought of another way, at any point in $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$ where the solution $V(S,t)$ to the Black-Scholes equation hits the value $(K-S)^+$, the holder should immediately exercise the option. Thus, the price of an American put option is given by the solution to the Black-Scholes equation subject to the obstacle $V(S,t) \geq (K-S)^+$. The set where $V(S,t) = (K-S)^+$ is referred to as the free boundary, since it determines the domain in which the PDE is to be solved. Knowledge of the free boundary is important: it tells us the value of the asset at time $t$ below which it is optimal for the holder to exericse the option. We can picture the free boundary as a curve $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$, although stricty speaking this requires one to prove something about the structure and regularity of free boundaries for Lipschitz obstacles.
+Therefore, the price of an American put option is characterised by the constraint $V(S,t) \geq (K-S)^+$ together with the condition that the Black-Scholes equation is satisfied in the region where $V(S,t) > (K-S)^+$, which we refer to as the *continuation region*. In the *exercise region* where $V(S,t) = (K-S)^+$, it is optimal for the holder to exercise the option. The interface between these two regions is the so-called free boundary, which determines for each time $t$ the threshold asset price below which exercise is optimal and above which the Black-Scholes equation governs the option price. 
 
-We put aside the analytic aspects of this free boundary problem for now, and consider instead numerical approaches to the problem. 
+We can picture the free boundary as a curve $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$, although stricty speaking this requires one to prove something about the structure and regularity of free boundaries for Lipschitz obstacles. We put aside the analytic aspects of this free boundary problem for now, and consider instead numerical approaches to the problem. 
 
 ## Numerical analysis 
 

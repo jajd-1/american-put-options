@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.patches as mpatches
 from statistics import NormalDist
+from scipy.linalg import solve_banded
 
 def european_put_implicit_fdm(S_max, K, T, r, sigma, M = 20, N = 20):
     dtau = T/N 
@@ -20,14 +21,21 @@ def european_put_implicit_fdm(S_max, K, T, r, sigma, M = 20, N = 20):
     a = -0.5 * dtau * ((sigma**2 * i**2) - (r * i))
     b = 1.0 + dtau * ((sigma**2 * i**2) + r)
     c = -0.5 * dtau * ((sigma**2 * i**2) + (r * i))
-    A = np.diag(b) + np.diag(c[:-1], 1) + np.diag(a[1:], -1)    #tridiagonal matrix for the finite difference scheme
+
+    #A = np.diag(b) + np.diag(c[:-1], 1) + np.diag(a[1:], -1)    #tridiagonal matrix for the finite difference scheme 
+
+    A_bands = np.zeros((3, M-1))
+    A_bands[0, 1:] = c[:-1]     #upper diagonal (with leading zero)
+    A_bands[1, :] = b           #main diagonal
+    A_bands[2, :-1] = a[1:]     #lower diagonal (with trailing zero)
 
     for n in range(N):
         rhs = V[n, 1:M].copy()
         rhs[0] -= a[0] * V[n+1, 0]
         rhs[-1] -= c[-1] * V[n+1, M]
         
-        V[n+1, 1:M] = np.linalg.solve(A, rhs)
+        #V[n+1, 1:M] = np.linalg.solve(A, rhs)       
+        V[n+1, 1:M] = solve_banded((1, 1), A_bands, rhs)    #quicker than np.linalg.solve for tridiagonal matrices
     
     return S_partition, tau_partition, V 
 
@@ -103,11 +111,34 @@ def plot_option_curve(S_partition1, V1, S_partition2 = None, V2 = None):
     plt.tight_layout()
     plt.show()
 
+
+def errors_by_meshsize(start, stop, step):
+    errors = {}
+
+    for n in range(start, stop, step):
+        _, _, V_fdm = european_put_implicit_fdm(400, 100, 1.0, 0.05, 0.2, n, n)             #change last entry to n*n for better mesh
+        _, _, V_exact = european_put_closed_form_sampled(400, 100, 1.0, 0.05, 0.2, n, n)    #ditto
+        errors[n] = np.max(np.abs(V_fdm - V_exact))
+
+    fig = plt.figure(figsize=(10,6))
+    plt.plot(errors.keys(), errors.values(), marker='')
+    plt.xlabel("Inverse mesh size")
+    plt.ylabel("$L^\\infty$ error")
+    plt.title("$L^\\infty$ error of finite difference approximation in terms of mesh size")
+    plt.grid(True)
+    plt.show()
+
+
 S_partition1, tau_partition1, V_fdm = european_put_implicit_fdm(400, 100, 1.0, 0.05, 0.2, 10, 10)
 S_partition2, tau_partition2, V_exact = european_put_closed_form_sampled(400, 100, 1.0, 0.05, 0.2, 10, 10)
 
 plot_option_surface(S_partition1, tau_partition1, V_fdm, S_partition2, tau_partition2, V_exact)
 plot_option_curve(S_partition1, V_fdm, S_partition2, V_exact)
+errors_by_meshsize(20, 500, 8)
+
+
+
+
 
 
 
