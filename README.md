@@ -6,15 +6,35 @@ More precisely, we first construct and validate our numerical solution produced 
 
 ## European put options
 
-A European put option gives the holder the right (but not the obligation) to sell an asset at a specified strike price $K$ at a specified maturity time $T$. If $S_t$ denotes the price of the asset at time $t \leq T$, then the payoff at maturity is $$(K-S_T)^+.$$ The price of the option at times $t < T$ may be considered as a function of $S$ and $t$ and, under certain assumptions, is given by the solution to the Black-Scholes equation $$\frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV = 0$$ with terminal condition $V(S,T) = (K-S)^+$. Here, $\sigma$ denotes the volatility and $r$ is the risk-free rate. We also have the boundary conditions $\lim_{S\rightarrow \infty} V(S,t) = 0$ (the put option is essentially worthless when the underlying price is far above the strike price) and $V(0,t) = K e^{-r(T-t)}$ (if the stock is worthless then the put option is worth its strike price discounted from maturity back to time $t$). 
+A European put option gives the holder the right (but not the obligation) to sell an asset at a specified strike price $K$ at a specified maturity time $T$. If $S_t$ denotes the price of the asset at time $t \leq T$, then the payoff at maturity is 
 
-Making the substitutions $$\tau = T - t, \quad u = Se^{r\tau} \quad \text{and}\quad x = \ln\bigg(\frac{S}{K}\bigg) + \bigg(r - \frac{1}{2}\sigma^2\bigg)\tau$$ transforms the Black-Scholes equation into the diffusion equation $$\frac{\partial u}{\partial \tau} = \frac{1}{2}\sigma^2 \frac{\partial^2 u}{\partial x^2},$$ which can be solved explicitly and transformed back to the original variables. 
+$$(K-S_T)^+.$$
+
+The price of the option at times $t < T$ may be considered as a function of $S$ and $t$ and, under certain assumptions, is given by the solution to the Black-Scholes equation 
+
+$$\frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV = 0$$
+
+with terminal condition $V(S,T) = (K-S)^+$. Here, $\sigma$ denotes the volatility and $r$ is the risk-free rate. We also have the boundary conditions $\lim_{S\rightarrow \infty} V(S,t) = 0$ (the put option is essentially worthless when the underlying price is far above the strike price) and $V(0,t) = K e^{-r(T-t)}$ (if the stock is worthless then the put option is worth its strike price discounted from maturity back to time $t$). 
+
+Making the substitutions
+
+$$\tau = T - t, \quad u = Se^{r\tau} \quad \text{and}\quad x = \ln\bigg(\frac{S}{K}\bigg) + \bigg(r - \frac{1}{2}\sigma^2\bigg)\tau$$
+
+transforms the Black-Scholes equation into the diffusion equation
+
+$$\frac{\partial u}{\partial \tau} = \frac{1}{2}\sigma^2 \frac{\partial^2 u}{\partial x^2},$$
+
+which can be solved explicitly and transformed back to the original variables. 
 
 **To do:** add explicit formula.
 
 ## American put options
 
-An American put option gives the holder the additional flexibility to exercise the option at any time before maturity. Rather than just the terminal condition $V(S,T) = (K-S)^+$, the following condition must be satisfied by the option price at all times $t\leq T$: $$V(S,t) \geq (K-S)^+.$$ Indeed, if this weren't the case then there would be an arbitrage opportunity: one could buy the asset at price $S$, purchase the put option at price $V$ and immediately exercise it to sell the asset at price $K$, resulting in a profit of $K - S - V > 0$. 
+An American put option gives the holder the additional flexibility to exercise the option at any time before maturity. Rather than just the terminal condition $V(S,T) = (K-S)^+$, the following condition must be satisfied by the option price at all times $t\leq T$: 
+
+$$V(S,t) \geq (K-S)^+.$$
+
+Indeed, if this weren't the case then there would be an arbitrage opportunity: one could buy the asset at price $S$, purchase the put option at price $V$ and immediately exercise it to sell the asset at price $K$, resulting in a profit of $K - S - V > 0$. 
 
 Thought of another way, at any point in $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$ where the solution $V(S,t)$ to the Black-Scholes equation hits the value $(K-S)^+$, the holder should immediately exercise the option. Thus, the price of an American put option is given by the solution to the Black-Scholes equation subject to the obstacle $V(S,t) \geq (K-S)^+$. The set where $V(S,t) = (K-S)^+$ is referred to as the free boundary, since it determines the domain in which the PDE is to be solved. Knowledge of the free boundary is important: it tells us the value of the asset at time $t$ below which it is optimal for the holder to exericse the option. We can picture the free boundary as a curve $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$, although stricty speaking this requires one to prove something about the structure and regularity of free boundaries for Lipschitz obstacles.
 
