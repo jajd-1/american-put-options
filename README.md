@@ -1,8 +1,8 @@
 # American put option pricing as a parabolic free boundary problem 
 
-The goal of this project is to formulate the American put option pricing problem mathematically as a parabolic obstacle/free boundary problem, solve the problem numerically and explore how the free boundary is affected by parameters. 
+The goal of this project is to formulate the American put option pricing problem mathematically as a parabolic obstacle/free boundary problem, solve the problem numerically and explore how the free boundary is affected by varying the parameters. 
 
-More precisely, we first construct and validate our numerical solution produced by the finite difference method (FDM) against the closed-form solution to the Black-Scholes PDE in the case of European put options. We then incorporate the obstacle imposed in the American case, and re-solve the problem numerically to extract the free boundary, which determines when it is optimal for the holder to exercise the option. In the process we address numerical challenges occuring near the free boundary. We then study how the free boundary changes as parameters such as the volatility, interest rate and maturity date are varied. 
+More precisely, we first construct and validate our numerical solution produced by the finite difference method (FDM) against the closed-form solution to the Black-Scholes equation in the case of European put options. We then incorporate the obstacle imposed in the American case, re-solve the problem numerically and extract the free boundary, which determines when it is optimal for the holder to exercise the option. In the process we address numerical challenges occuring near the free boundary. We then study how the free boundary changes as parameters such as the volatility, interest rate and maturity date are varied. 
 
 ## European put options
 
@@ -24,9 +24,13 @@ transforms the Black-Scholes equation into the diffusion equation
 
 $$\frac{\partial u}{\partial \tau} = \frac{1}{2}\sigma^2 \frac{\partial^2 u}{\partial x^2},$$
 
-which can be solved explicitly and transformed back to the original variables. 
+which can be solved explicitly and transformed back to the original variables, yielding the following price at time $T$ to expiration:
 
-**To do:** add explicit formula.
+$$K e^{-rT}N(-d_2) - SN(-d_1),$$
+
+where $N$ is the CDF of the standard normal distribution and 
+
+$$d_1 = \frac{\ln\big(\frac{S}{K}\big) + \big(r + \frac{\sigma^2}{2}\big)}{\sigma\sqrt{T}}, \quad d_2 = d_1 - \sigma\sqrt{T}.$$
 
 ## American put options
 
@@ -36,9 +40,9 @@ $$V(S,t) \geq (K-S)^+.$$
 
 at all times $t \leq T$. Indeed, if this weren't the case then there would be an arbitrage opportunity: one could buy the asset at price $S$, purchase the put option at price $V$ and immediately exercise it to sell the asset at price $K$, resulting in a profit of $K - S - V > 0$.
 
-Therefore, the price of an American put option is characterised by the constraint $V(S,t) \geq (K-S)^+$ together with the condition that the Black-Scholes equation is satisfied in the region where $V(S,t) > (K-S)^+$, which we refer to as the *continuation region*. In the *exercise region* where $V(S,t) = (K-S)^+$, it is optimal for the holder to exercise the option. The interface between these two regions is the so-called free boundary, which determines for each time $t$ the threshold asset price below which exercise is optimal and above which the Black-Scholes equation governs the option price. 
+Therefore, the price of an American put option is characterised by the constraint $V(S,t) \geq (K-S)^+$ together with the condition that the Black-Scholes equation is satisfied in the region where $V(S,t) > (K-S)^+$, which we refer to as the *continuation region*. In the *exercise region*, where $V(S,t) = (K-S)^+$, it is optimal for the holder to exercise the option. The interface between these two regions is the so-called free boundary, which determines for each time $t$ the threshold asset price below which exercise is optimal and above which the Black-Scholes equation governs the option price. 
 
-We can picture the free boundary as a curve $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$, although stricty speaking this requires one to prove something about the structure and regularity of free boundaries for Lipschitz obstacles. We put aside the analytic aspects of this free boundary problem for now, and consider instead numerical approaches to the problem. 
+We can picture the free boundary as a curve $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$, although stricty speaking this requires one to prove something about the structure and regularity of free boundaries for Lipschitz obstacles. We put aside this analytic aspect of the free boundary problem for now, and consider instead numerical approaches to the problem. 
 
 ## Numerical analysis 
 
