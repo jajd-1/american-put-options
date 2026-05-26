@@ -42,7 +42,9 @@ $$V(S,t) \geq (K-S)^+.$$
 
 at all times $t \leq T$. Indeed, if this weren't the case then there would be an arbitrage opportunity: one could buy the asset at price $S$, purchase the put option at price $V$ and immediately exercise it to sell the asset at price $K$, resulting in a profit of $K - S - V > 0$.
 
-Therefore, the price of an American put option is characterised by the constraint $V(S,t) \geq (K-S)^+$ together with the condition that the Black-Scholes equation is satisfied in the region where $V(S,t) > (K-S)^+$, which we refer to as the *continuation region*. In the *exercise region*, where $V(S,t) = (K-S)^+$, it is optimal for the holder to exercise the option. The interface between these two regions is the so-called free boundary, which determines for each time $t$ the threshold asset price below which exercise is optimal and above which the Black-Scholes equation governs the option price. 
+Therefore, the price of an American put option is characterised by the constraint $V(S,t) \geq (K-S)^+$ together with the condition that the Black-Scholes equation is satisfied in the region where $V(S,t) > (K-S)^+$, which we refer to as the *continuation region*. In the *exercise region*, where $V(S,t) = (K-S)^+$, it is optimal for the holder to exercise the option. The interface between these two regions is the so-called free boundary, which determines for each time $t$ the threshold asset price below which exercise is optimal and above which the Black-Scholes equation governs the option price. Mathematically, we are therefore looking to solve the following subject to the initial and boundary conditions mentioned above:
+
+$$ \min\bigg\{V - (K-S)^+, \,\, \frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV\bigg\} = 0.$$
 
 We can picture the free boundary as a curve $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$, although stricty speaking this requires one to prove something about the structure and regularity of free boundaries for Lipschitz obstacles. We put aside this analytic aspect of the free boundary problem for now, and consider instead numerical approaches to the problem. 
 
@@ -85,7 +87,7 @@ where
 $$a_i = -\frac{\Delta \tau}{2}(\sigma^2 i^2 - ri), \quad b_i = 1 + \Delta\tau(\sigma^2 i^2 + r), \quad c_i = -\frac{\Delta\tau}{2}(\sigma^2 i^2 + ri).$$
 
 
-The initial condition $V(S,0) = (K-S)^+$ implies $V_i^0 = V(S_i, 0) = (K-S_i)^+$ for each $i = 0, \dots, M$, the boundary condition $V(0,\tau) = Ke^{-r\tau}$ implies $V_0^n = V(S_0, \tau_n) = V(0, \tau_n) = Ke^{-r\tau_n}$ for $n = 0, \dots N$ and the boundary condition $V(S_\text{max},\tau) = 0$ implies $V_M^n = V(S_\text{max},\tau_n) = 0$ for $n=0,\dots,N$. 
+The initial condition $V(S,0) = (K-S)^+$ implies $V_i^0 = V(S_i, 0) = (K-S_i)^+$ for each $i = 0, \dots, M$, the boundary condition $V(0,\tau) = Ke^{-r\tau}$ implies $V_0^n = V(S_0, \tau_n) = V(0, \tau_n) = Ke^{-r\tau_n}$ for $n = 0, \dots, N$ and the boundary condition $V(S_\text{max},\tau) = 0$ implies $V_M^n = V(S_\text{max},\tau_n) = 0$ for $n=0,\dots,N$. 
 
 
 Thus for each $n=0,\dots,N-1$ we have the linear system 
@@ -138,4 +140,49 @@ V_{M-1}^0
 \end{pmatrix}. 
 $$
 
-Inverting the tridiagonal matrix above then allows us to iteratively find the value of $V_i^n$ at any time step $n$. 
+Inverting the tridiagonal matrix above (which we henceforth denote by $A$) then allows us to iteratively find the value of $V_i^n$ at any time step $n$. The fact that $A$ is tridiagonal allows for more efficient inversion than with `np.linalg.solve`, by using e.g. Thomas' algorithm as implemented in `scipy.linalg.solve_banded`. 
+
+### American case
+
+We first observe that arguments above remain valid for American options **in the continuation region**, subject to the following small change: the boundary condition at $S=0$ is now $V(0,\tau) = K$, which implies $V_0^n = K$ for $n = 0, \dots, N$. The effect of this change is that the first entry on the RHS of the above matrix equation becomes $V_1^n - a_1 K$. 
+
+
+Globally, i.e. also taking into account the exercise region, things are more complicated. Denote 
+
+$$V^{n+1} := (V_1^{n+1}, \dots, V_{M-1}^{n+1})^T, \qquad \widetilde{V}^n = V^n - (a_1 K, 0, \dots, 0)^T \quad \text{and} \quad \phi_i = (K-S_i)^+. $$
+
+ Then at each time step, the solution $V^{n+1}$ must satisfy the following entry-wise:
+
+$$V^{n+1} \geq \phi, \quad AV^{n+1} \geq \widetilde{V}^n  \quad \text{and} \quad (V^{n+1}-\phi)^T(AV^{n+1} - \widetilde{V}^n) = 0,$$
+
+i.e. for each $i = 1, \dots, M-1$ we require 
+
+$$V^{n+1}_i \geq \phi_i, \quad (AV^{n+1})_i \geq \widetilde{V}^n_i  \quad \text{and} \quad (V^{n+1}-\phi)_i(AV^{n+1} - \widetilde{V}^n)_i = 0.$$
+
+To solve this constrained system we use the method of projective successive over-relaxation (PSOR), which uses the Gauss-Seidel iterative procedure at each time step combined with projections (to incorporate the constraint) and over-relaxations (to speed up convergence). Let us first explain the Gauss-Seidel method. Recall the non-matrix form of our discretised equation:
+
+$$ V_i^n = a_i V_{i-1}^{n+1} + b_i V_i^{n+1} + c_i V_{i+1}^{n+1}.$$
+
+Noting that $b_i = 1 + \Delta\tau(\sigma^2 i^2 + r) > 0$, we therefore have the following equation at time step $n+1$: 
+
+$$ V_i^{n+1} = \frac{V_i^n - a_i V_{i-1}^{n+1} - c_i V_{i+1}^{n+1}}{b_i}.$$
+
+The quantity $V_i^n$ is from the previous time step and is therefore known, but the quantities $V_{i-1}^{n+1}$ and $V_{i+1}^{n+1}$ are from the current time step and are not yet known. Starting with an initial guess $V^{n+1, (0)}$ for the vector $V^{n+1} = (V_1^{n+1}, \dots, V_{M-1}^{n+1})$, the Gauss-Seidel method cycles through the components of this vector multiple times and, using a bracketed index $(k)$ to denote the $k$'th run-through, updates $V_i^{n+1, (k)}$ to $V_i^{n+1, (k+1)}$ via the formula:
+
+$$ V_i^{n+1, (k+1)} = \frac{V_i^n - a_i V_{i-1}^{n+1, (k+1)} - c_i V_{i+1}^{n+1, (k)}}{b_i}.$$
+
+Note when one reaches the $i$'th vector component on the $(k+1)$'st iteration through the vector components, everything on the RHS above is already known. Under certain assumptions which we do not discuss here, $V_i^{n+1, (k+1)}$ converges to $V_i^{n+1}$ as $k\rightarrow \infty$. 
+
+In the absence of over-relaxation (which we explain in a moment), the PSOR algorithm simply modifies the Gauss-Seidel method by projecting up onto the constraint if the Gauss-Seidel candidate falls below it. Using hats to denote quantities arising in this new procedure, we therefore have
+
+$$ \hat{V}_i^{n+1, (k+1)} = \max\bigg\{\frac{\hat{V}_i^n - a_i \hat{V}_{i-1}^{n+1, (k+1)} - c_i \hat{V}_{i+1}^{n+1, (k)}}{b_i}, \,\, (K - S_i)^+\bigg\}.$$
+
+Finally, over-relaxation with parameter $\omega \geq 1$ pushes the initial Gauss-Seidel update further in the direction of the change before projecting. More precisely, denoting 
+
+$$ V_{i, \omega}^{n, (k+1)} = V_i^{n+1, (k)} + \omega \big(V_i^{n+1, (k+1)} - V_i^{n+1, (k)}\big),$$
+
+the PSOR update is given by 
+
+$$ \widetilde{V}_i^{n, (k+1)} = \max\big\{V_{i,\omega}^{n, (k+1)}, \,\, (K-S_i)^+ \big\}.$$
+
+This agrees with the Gauss-Seidel method with projection when $\omega = 1$, and is referred to as `over-relaxed' when $\omega > 1$. We note that although choosing $\omega > 1$ may speed up convergence, choosing $\omega$ too large can cause instabilities and failure to converge. 
