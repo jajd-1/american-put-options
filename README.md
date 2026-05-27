@@ -175,7 +175,7 @@ Note when one reaches the $i$'th vector component on the $(k+1)$'st iteration th
 
 In the absence of over-relaxation (which we explain in a moment), the PSOR algorithm simply modifies the Gauss-Seidel method by projecting up onto the constraint if the Gauss-Seidel candidate falls below it. Using hats to denote quantities arising in this new procedure, we therefore have
 
-$$ \hat{V}_i^{n+1, (k+1)} = \max\bigg\{\frac{\hat{V}_i^n - a_i \hat{V}_{i-1}^{n+1, (k+1)} - c_i \hat{V}_{i+1}^{n+1, (k)}}{b_i}, \,\, (K - S_i)^+\bigg\}.$$
+$$ \hat{V}_i^{n+1, (k+1)} = \max\biggl\{\frac{\hat{V}_i^n - a_i \hat{V}_{i-1}^{n+1, (k+1)} - c_i \hat{V}_{i+1}^{n+1, (k)}}{b_i}, \,\, (K - S_i)^+\biggr\}.$$
 
 Finally, over-relaxation with parameter $\omega \geq 1$ pushes the initial Gauss-Seidel update further in the direction of the change before projecting. More precisely, denoting 
 
@@ -183,6 +183,6 @@ $$ V_{i, \omega}^{n, (k+1)} = V_i^{n+1, (k)} + \omega \big(V_i^{n+1, (k+1)} - V_
 
 the PSOR update is given by 
 
-$$ \widetilde{V}_i^{n, (k+1)} = \max\big\{V_{i,\omega}^{n, (k+1)}, \,\, (K-S_i)^+ \big\}.$$
+$$ \widetilde{V}_i^{n, (k+1)} = \max\bigl\{V_{i,\omega}^{n, (k+1)}, \,\, (K-S_i)^+ \bigr\}.$$
 
 This agrees with the Gauss-Seidel method with projection when $\omega = 1$, and is referred to as `over-relaxed' when $\omega > 1$. We note that although choosing $\omega > 1$ may speed up convergence, choosing $\omega$ too large can cause instabilities and failure to converge. 

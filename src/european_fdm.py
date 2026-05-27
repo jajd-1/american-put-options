@@ -11,10 +11,10 @@ def european_put_implicit_fdm(S_max, K, T, r, sigma, M = 20, N = 20):
     S_partition = np.linspace(0.0, S_max, M+1)
     tau_partition = np.linspace(0.0, T, N+1)
 
-    V = np.zeros((N+1, M+1))                     #V[n,i] = option value at time to maturity tau_n := tau_partition[n] and stock price S_i := S_partition[i]
+    V = np.zeros((N+1, M+1))                            #V[n,i] = option value at time to maturity tau_n := tau_partition[n] and stock price S_i := S_partition[i]
     V[0, :] = np.maximum(K - S_partition, 0)            #initial condition at n = 0 (maturity)
-    V[:, 0] = K * np.exp(-r * tau_partition)         #first boundary condition: if price of asset is zero, value of option is the discounted strike price
-    V[:, -1] = 0.0                               #second boundary condition: we assume S_max is sufficiently large so that the option is essentially worthless if the asset reaches this price
+    V[:, 0] = K * np.exp(-r * tau_partition)            #first boundary condition: if price of asset is zero, value of option is the discounted strike price
+    V[:, -1] = 0.0                                      #second boundary condition: we assume S_max is sufficiently large so that the option is essentially worthless if the asset reaches S_max
 
     i = np.arange(1,M)      #vector of interior 'spatial' indices
 
@@ -32,7 +32,7 @@ def european_put_implicit_fdm(S_max, K, T, r, sigma, M = 20, N = 20):
     for n in range(N):
         rhs = V[n, 1:M].copy()
         rhs[0] -= a[0] * V[n+1, 0]
-        rhs[-1] -= c[-1] * V[n+1, M]
+        rhs[-1] -= c[-1] * V[n+1, M]           #this does nothing since right boundary value is 0
         
         #V[n+1, 1:M] = np.linalg.solve(A, rhs)       
         V[n+1, 1:M] = solve_banded((1, 1), A_bands, rhs)    #quicker than np.linalg.solve for tridiagonal matrices
