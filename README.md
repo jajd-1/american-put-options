@@ -2,7 +2,7 @@
 
 The goal of this project is to formulate the American put option pricing problem mathematically as a parabolic obstacle/free boundary problem, solve the problem numerically and explore how the free boundary is affected by varying the parameters. 
 
-More precisely, we first construct and validate our numerical solution produced by the finite difference method (FDM) against the closed-form solution to the Black-Scholes equation in the case of European put options. We then incorporate the obstacle imposed in the American case, re-solve the problem numerically and extract the free boundary, which determines when it is optimal for the holder to exercise the option. In the process we address numerical challenges occuring near the free boundary. We then study how the free boundary changes as parameters such as the volatility, interest rate and maturity date are varied. 
+More precisely, we first construct and validate our numerical solution produced by the finite difference method (FDM) against the closed-form solution to the Black-Scholes equation in the case of European put options. We then incorporate the obstacle imposed in the American case, re-solve the problem numerically and extract the free boundary, which determines when it is optimal for the holder to exercise the option. We then study how the free boundary changes as parameters such as the volatility, interest rate and maturity date are varied. 
 
 ## European and American put options
 
@@ -32,7 +32,7 @@ $$K e^{-rT}N(-d_2) - SN(-d_1),$$
 
 where $N$ is the CDF of the standard normal distribution and 
 
-$$d_1 = \frac{\ln\big(\frac{S}{K}\big) + \big(r + \frac{\sigma^2}{2}\big)}{\sigma\sqrt{T}}, \quad d_2 = d_1 - \sigma\sqrt{T}.$$
+$$d_1 = \frac{\ln\big(\frac{S}{K}\big) + \big(r + \frac{\sigma^2}{2}\big)T}{\sigma\sqrt{T}}, \quad d_2 = d_1 - \sigma\sqrt{T}.$$
 
 ### American case
 
@@ -54,7 +54,7 @@ We can picture the free boundary as a curve $\{(S,t): S\in[0,\infty), t\in[0,T]\
 
 We consider the equation obtained by making the substitution $\tau = T - t$ and considering $V$ as a function of $S$ and $\tau$:
 
-$$\frac{\partial V}{\partial \tau} =  \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S}.$$
+$$\frac{\partial V}{\partial \tau} =  \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV.$$
 
 Note that the terminal condition has now become the initial condition $V(S,0) = (K-S)^+$. The boundary condition at $S=0$ reads $V(0,\tau) = Ke^{-r\tau}$, and to approximate the boundary condition at $S = \infty$, we truncate the $S$ domain to $S\in[0,S_\text{max}]$, where $S_\text{max}$ is some fixed multiple of the strike price at which the option would essentially be worthless in practice (e.g. $S_\text{max}\approx 5K$), and set $V(S_\text{max},\tau) = 0$. Then the parabolic cylinder on which to solve the PDE is just the rectangle $[0, S_\text{max}]\times(0,T]$, which lends itself to the finite difference method. 
 
@@ -70,13 +70,13 @@ and define
 
 $$V_i^n = V(S_i, \tau_n).$$
 
-We start with a fully implicit scheme whereby spatial derivatives are evaluated using backward differences at time $t_{n+1}$. This is in contrast to a computationally cheaper but less stable fully explicit scheme which uses forward differences at time $t_n$ (we will later consider the Crank-Nicolson method, which uses central differences at time $t_{n+\frac{1}{2}}$). Substituting the approximations
+We start with a fully implicit scheme in which the time derivative is approximated at $t_{n+1}$ using a backward difference and the spatial derivatives are approximated at $t_{n+1}$ using central differences. This is in contrast to a computationally cheaper but less stable fully explicit scheme which uses forward differences at time $t_n$ (we will later consider the Crank-Nicolson method, which uses central differences at time $t_{n+\frac{1}{2}}$). Substituting the approximations
 
 $$\frac{\partial V}{\partial S}(S_i, \tau_{n+1}) \approx \frac{V_{i+1}^{n+1} - V_{i-1}^{n+1}}{2\Delta S} \qquad (i=1,\dots,M-1, \quad n = 0, \dots, N-1),$$
 
 $$\frac{\partial^2 V}{\partial S^2}(S_i, \tau_{n+1}) \approx \frac{V_{i+1}^{n+1} - 2 V_i^{n+1} + V_{i-1}^{n+1}}{(\Delta S)^2} \qquad (i=1,\dots,M-1, \quad n = 0, \dots, N-1),$$
 
-$$ \frac{\partial S}{\partial \tau}(S_i, \tau_{n+1}) \approx \frac{V_i^{n+1} - V_i^n}{\Delta \tau} \qquad (i=0, \dots, M, \quad n = 0, \dots, N-1)$$
+$$ \frac{\partial V}{\partial \tau}(S_i, \tau_{n+1}) \approx \frac{V_i^{n+1} - V_i^n}{\Delta \tau} \qquad (i=0, \dots, M, \quad n = 0, \dots, N-1)$$
 
 into our equation, we obtain for $i = 1,\dots, M-1$ and $n = 0, \dots, N-1$ the equation
 
