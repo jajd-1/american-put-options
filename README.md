@@ -22,31 +22,33 @@ Making the substitutions
 
 $$\tau = T - t, \quad u = Se^{r\tau} \quad \text{and}\quad x = \ln\bigg(\frac{S}{K}\bigg) + \bigg(r - \frac{1}{2}\sigma^2\bigg)\tau$$
 
-transforms the Black-Scholes equation into the diffusion equation
+transforms the Black-Scholes equation into the 1D heat equation
 
 $$\frac{\partial u}{\partial \tau} = \frac{1}{2}\sigma^2 \frac{\partial^2 u}{\partial x^2},$$
 
-which can be solved explicitly and transformed back to the original variables, yielding the following price at time $T$ to expiration:
+which can be solved uniquely and in closed form. Transforming back into the original variables yields the solution
 
-$$K e^{-rT}N(-d_2) - SN(-d_1),$$
+$$V(S,t) = K e^{-rt}N(-d_2) - SN(-d_1),$$
 
 where $N$ is the CDF of the standard normal distribution and 
 
-$$d_1 = \frac{\ln\big(\frac{S}{K}\big) + \big(r + \frac{\sigma^2}{2}\big)T}{\sigma\sqrt{T}}, \quad d_2 = d_1 - \sigma\sqrt{T}.$$
+$$d_1 = \frac{\ln\big(\frac{S}{K}\big) + \big(r + \frac{\sigma^2}{2}\big)t}{\sigma\sqrt{t}}, \quad d_2 = d_1 - \sigma\sqrt{t}.$$
 
 ### American case
 
 An American put option gives the holder the additional flexibility to exercise the option at any time before maturity. The first change required in the PDE formulation is the boundary condition at $S=0$: since one no longer has to wait until maturity, an American put option is simply worth its strike price if the stock price hits zero, i.e. $V(0,t) = K$. The second change is more interesting: rather than just the terminal condition $V(S,T) = (K-S)^+$, the option price must also satisfy
 
-$$V(S,t) \geq (K-S)^+.$$
+$$V(S,t) \geq (K-S)^+$$
 
 at all times $t \leq T$. Indeed, if this weren't the case then there would be an arbitrage opportunity: one could buy the asset at price $S$, purchase the put option at price $V$ and immediately exercise it to sell the asset at price $K$, resulting in a profit of $K - S - V > 0$.
 
-Therefore, the price of an American put option is characterised by the constraint $V(S,t) \geq (K-S)^+$ together with the condition that the Black-Scholes equation is satisfied in the region where $V(S,t) > (K-S)^+$, which we refer to as the *continuation region*. In the *exercise region*, where $V(S,t) = (K-S)^+$, it is optimal for the holder to exercise the option. The interface between these two regions is the so-called free boundary, which determines for each time $t$ the threshold asset price below which exercise is optimal and above which the Black-Scholes equation governs the option price. Mathematically, we are therefore looking to solve the following subject to the initial and boundary conditions mentioned above:
+Therefore, the price of an American put option is characterised by the constraint $V(S,t) \geq (K-S)^+$ together with the condition that the Black-Scholes equation is satisfied in the region where $V(S,t) > (K-S)^+$, which we refer to as the *continuation region*. In the *exercise region*, where $V(S,t) = (K-S)^+$, it is optimal for the holder to exercise the option. The interface between these two regions is the so-called free boundary, which determines for each time $t$ the threshold asset price below which exercise is optimal and above which the Black-Scholes equation governs the option price. Mathematically, we are therefore looking to solve the following subject to the initial and boundary conditions stated above:
 
 $$ \min\bigg\{V - (K-S)^+, \,\, \frac{\partial V}{\partial t} + \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV\bigg\} = 0.$$
 
-We can picture the free boundary as a curve $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$, although stricty speaking this requires one to prove something about the structure and regularity of free boundaries for Lipschitz obstacles. We put aside this analytic aspect of the free boundary problem for now, and consider instead numerical approaches to the problem. 
+By standard theory for linear parabolic free boundary problems, this problem admits a unique weak/viscosity solution, although unlike the European case there is no closed form. 
+
+We can picture the free boundary as a curve $\{(S,t): S\in[0,\infty), t\in[0,T]\}\subset\mathbb{R}^2$, although stricty speaking this requires one to prove something about the structure and regularity of free boundaries for Lipschitz obstacles. Whilst we will not consider this analytic aspect of the free boundary problem, we will investigate the behaviour of our numerical solution *across* the free boundary. Analytically, we expect $V\in C^1_x$ with a jump in the second derivative across the free boundary ($V\in C^0$ is clear from the problem definition, but differentiability across the free boundary must be derived and is known as the *smooth-fit condition*).
 
 ## Numerical analysis 
 
@@ -56,7 +58,7 @@ We consider the equation obtained by making the substitution $\tau = T - t$ and 
 
 $$\frac{\partial V}{\partial \tau} =  \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} + rS\frac{\partial V}{\partial S} - rV.$$
 
-Note that the terminal condition has now become the initial condition $V(S,0) = (K-S)^+$. The boundary condition at $S=0$ reads $V(0,\tau) = Ke^{-r\tau}$, and to approximate the boundary condition at $S = \infty$, we truncate the $S$ domain to $S\in[0,S_\text{max}]$, where $S_\text{max}$ is some fixed multiple of the strike price at which the option would essentially be worthless in practice (e.g. $S_\text{max}\approx 5K$), and set $V(S_\text{max},\tau) = 0$. Then the parabolic cylinder on which to solve the PDE is just the rectangle $[0, S_\text{max}]\times(0,T]$, which lends itself to the finite difference method. 
+Note that the terminal condition has now become the initial condition $V(S,0) = (K-S)^+$. The boundary condition at $S=0$ reads $V(0,\tau) = Ke^{-r\tau}$, and to approximate the boundary condition at $S = \infty$, we truncate the $S$ domain to $S\in[0,S_\text{max}]$, where $S_\text{max}$ is some fixed multiple of the strike price at which the option would essentially be worthless in practice (e.g. $S_\text{max}\approx 4K$), and set $V(S_\text{max},\tau) = 0$. The domain for the PDE is therefore just the rectangle $[0, S_\text{max}]\times(0,T]$, which lends itself to the finite difference method. 
 
 We discretise the interval $[0, S_\text{max}]$ into $M+1$ points 
 
@@ -70,7 +72,7 @@ and define
 
 $$V_i^n = V(S_i, \tau_n).$$
 
-We start with a fully implicit scheme in which the time derivative is approximated at $t_{n+1}$ using a backward difference and the spatial derivatives are approximated at $t_{n+1}$ using central differences. This is in contrast to a computationally cheaper but less stable fully explicit scheme which uses forward differences at time $t_n$ (we will later consider the Crank-Nicolson method, which uses central differences at time $t_{n+\frac{1}{2}}$). Substituting the approximations
+We start with a fully implicit scheme in which the time derivative is approximated at $t_{n+1}$ using a backward difference and the spatial derivatives are approximated at $t_{n+1}$ using central differences. This is in contrast to a computationally cheaper but less stable fully explicit scheme which uses forward differences at time $t_n$ (other numerical schemes with favourable properties are also available, such as the Crank-Nicolson method which uses central differences at time $t_{n+\frac{1}{2}}$). Substituting the approximations
 
 $$\frac{\partial V}{\partial S}(S_i, \tau_{n+1}) \approx \frac{V_{i+1}^{n+1} - V_{i-1}^{n+1}}{2\Delta S} \qquad (i=1,\dots,M-1, \quad n = 0, \dots, N-1),$$
 
@@ -140,7 +142,7 @@ V_{M-1}^0
 \end{pmatrix}. 
 $$
 
-Inverting the tridiagonal matrix above (which we henceforth denote by $A$) then allows us to iteratively find the value of $V_i^n$ at any time step $n$. The fact that $A$ is tridiagonal allows for more efficient inversion than with `np.linalg.solve`, by using e.g. Thomas' algorithm as implemented in `scipy.linalg.solve_banded`. 
+Inverting the tridiagonal matrix above (which we henceforth denote by $A$) then allows us to iteratively find the value of $V_i^n$ at any time step $n$. Moreover, this inversion can be carried out somewhat efficiently since $A$ is tridiagonal (in the code we use `scipy.linalg.solve_banded`, which inverts $A$ using Thomas' algorithm). 
 
 ### American case
 
@@ -186,3 +188,44 @@ the PSOR update is given by
 $$ \widetilde{V}_i^{n, (k+1)} = \max\bigl\{V_{i,\omega}^{n, (k+1)}, \,\, (K-S_i)^+ \bigr\}.$$
 
 This agrees with the Gauss-Seidel method with projection when $\omega = 1$, and is referred to as `over-relaxed' when $\omega > 1$. We note that although choosing $\omega > 1$ may speed up convergence, choosing $\omega$ too large can cause instabilities and failure to converge. 
+
+
+## The code and its outputs
+
+### European case
+
+`european_fdm.py` contains three functions: 
+
+1. `european_put_implicit_fdm` uses the fully implicit scheme described above to compute an approximate solution to the Black-Scholes equation in the case of a European put option. It takes as input `S_max, K, T, r sigma, M, N`, all of which have been defined above. 
+
+2. `european_put_closed_form` computes the exact solution to the Black-Scholes equation in the case of a European put option using the closed form solution given above. It takes as input `S, K, T, r, sigma`. 
+
+3. `european_put_closed_form_sampled` takes the same inputs as `european_put_implicit_fdm` and samples the exact solution returned by `european_put_closed_form` on the corresponding grid points. This allows for comparisions between the approximate and exact solutions. 
+
+The following is a plot of both the approximate FDM solution and the sampled exact solution at $t=0$ with $M = N = 500$; as hoped, these are virtually indistinguishable:
+
+<p align="center">
+  <img src="images/European_put_option_value_at_$t=0$_as_a_function_of_S_-_FDM_vs_exact_solution.png" width="800" alt="European curve">
+</p>
+
+The surface plots for $0 \leq \tau \leq T$ are also essentially indistinguishable: 
+
+<p align="center">
+  <img src="images/European_put_option_value_as_a_function_of_the_S_and_tau_-_FDM_vs_exact_solution.png" width="800" alt="European surface">
+</p>
+
+
+We also plot $\|V_\text{FDM} - V_\text{exact}\|_{L^\infty(\text{mesh})}$ as a function of $1/M$ (with $M = N$):
+
+<p align="center">
+  <img src="images/meshsize_errors.png" width="800" alt="Errors">
+</p>
+
+### American case
+
+`american_fdm.py` contains two functions:
+
+1. `american_put_implicit_psor` uses the PSOR scheme explained above to compute an approximate solution to the Black-Scholes equation in the case of an American put option. In addition to the arguments `S_max, K, T, r, sigma, M, N` in the European case, it also contains the arguments `omega, tol, max_iter`. Here, `omega` is the over-relaxtion parameter, `tol` is a small number resembling a threshold for convergence, and `max_iter` determines the maximum number of times we cycle through the solution vector at each time slice in the event our convergence criterion is not met. 
+
+2. `extract_free_boundary` extracts for each time slice the grid value of $S$ below which the holder should exercise. It also returns the corresponding option value $V$, which is used to project the free boundary curve onto the surface of the solution. It takes as input the partition `S_partition` of the $S$-domain, the approximate solution `V`, the strike price `K` and a tolerance `tol` which is used to deal with potential numerical instabilities near the free boundary.
+
