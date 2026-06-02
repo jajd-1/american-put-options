@@ -1,10 +1,18 @@
-# American put option pricing as a parabolic free boundary problem 
+# American put option pricing as a parabolic free boundary problem: PSOR and a numerical study of free boundary regularity
 
-The goal of this project is to formulate the American put option pricing problem mathematically as a parabolic free boundary problem, solve the problem numerically and study a selection of regularity properties of the extracted free boundary and numerical solution. 
+This project studies the pricing of an American put option through its formulation as a parabolic free boundary problem. Using projective successive over-relaxation (PSOR), we first obtain numerical approximations to both the solution and the associated free boundary. We then investigate the behaviour of our free boundary near maturity and the behaviour of the Greeks of our solution across this free boundary, comparing the observed phenomena to properties established for exact solutions in the literature [[1, 2]](#references). 
 
-More precisely, we first construct a numerical solution to the Black-Scholes equation in the case of a European put option using a fully implicit finite difference scheme, and validate this approximate solution against the closed-form solution available. We then incorporate the obstacle imposed in the American case and re-solve the problem numerically using projective successive over-relaxation (PSOR). In the process we extract the free boundary of our numerical solution, which determines when it is optimal for the holder to exercise the option. We assess the regularity properties of both our free boundary and numerical solution against some regularity properties known to hold for the exact solution, as asserted by Barles et. al. [[1]](#references) and Jaillet et. al. [[2]](#references). In particular, we look at the asymptotic behaviour of the free boundary at maturity and the behaviour of the option's Delta and Gamma across the free boundary. We then study how the free boundary is affected by parameters such as the volatility and interest rate.
+The remainder of this README is organised as follows: 
 
-I learned most of the background on theory and numerical techniques from Chapters 7-9 of the text [[3]](#references).
+1. [European and American put options](#european-and-american-put-options). We begin by defining a European put option and briefly explain how its price can be obtained as a closed-form solution to the Black-Scholes equation. We then introduce the American put option and explain how its price arises as the solution to a 1D parabolic free boundary problem, namely an obstacle problem for the Black-Scholes equation. We state some regularity properties of the solution and free boundary that we will investigate numerically in later sections. 
+
+2. [Numerical analysis](#numerical-analysis). We first explain how to solve the European put problem numerically using a fully implicit finite difference scheme (although our focus will be on the American case, validating this approximate solution against the closed-form solution serves as a useful check). We then explain how to solve the American problem using projective successive over-relaxation (PSOR), a procedure based on the the Gauss-Seidel method. 
+
+3. [Project structure and outputs](#project-structure-and-outputs). We run through the structure of our source code and examine the outputs. We compare the behaviour of the solutions in the European and American cases, and study in more detail certain properties of our numerical solutions in the American case. In particular, we verify that our free boundary exhibits behaviour near maturity consistent with the asymptotics of the exact solution proved in [[1]](#references), namely $O(\sqrt{(T-t)|\ln (T-t)|})$ as $t\rightarrow T$. We also verify that the behaviour of our solution across the free boundary is consistent with the regularity theory for exact solutions proved in [[2]](#references), namely $\Delta = \frac{\partial V}{\partial S}$ is continuous across the free boundary whereas $\Gamma = \frac{\partial^2 V}{\partial S^2}$ admits a jump. We also provide some plots demonstrating how the free boundary is affected by varying the volatility and interest rate. 
+
+4. [References](#references). 
+
+Most of the background theory and numerical techniques were learnt from Chapters 7-9 of the text [[3]](#references).
 
 ## European and American put options
 
@@ -28,7 +36,7 @@ transforms the Black-Scholes equation into the 1D heat equation
 
 $$\frac{\partial u}{\partial \tau} = \frac{1}{2}\sigma^2 \frac{\partial^2 u}{\partial x^2},$$
 
-which can be solved uniquely and in closed form. Transforming back into the original variables yields the solution
+which can be solved uniquely and in closed form. Transforming back into the original variables thus yields the explicit solution
 
 $$V(S,t) = K e^{-rt}N(-d_2) - SN(-d_1),$$
 
@@ -50,15 +58,15 @@ $$ \min\bigg\{V - (K-S)^+, \,\, \frac{\partial V}{\partial t} + \frac{1}{2}\sigm
 
 By standard theory for linear parabolic free boundary problems, this problem admits a unique weak/viscosity solution, although unlike the European case there is no closed form. 
 
-We would like to study whether our numerical solutions exhibit certain regularity properties known to hold for exact solutions. The first property concerns the free boundary itself, which by classical theory is smooth away from $t= T$ but exhibits more interesting behaviour at expiry: by Barles et. al. [[1]](#references), the free boundary $S^*(t)$ should obey the asymptotics 
+Beyond simply constructing numerical solutions to this problem, we would also like to study whether these numerical solutions exhibit certain regularity properties known to hold for exact solutions. The first property concerns the free boundary itself, which by classical theory is smooth away from $t= T$ but exhibits more interesting behaviour at expiry: by Barles et al. [[1]](#references), the free boundary $S^*(t)$ should obey the asymptotics 
 
 $$ K - S^*(t) \sim \sigma K \sqrt{(T-t)|\ln (T-t)|} \quad \text{as }t\rightarrow T.$$
 
-We also investigate the behaviour of our numerical solution *across* the free boundary away from maturity. Again, classical theory tells us that the solution $V$ is smooth in the continuation region away from maturity, but across the free boundary there is a loss of regularity at second order in space and first order in time. More precisely, by Jaillet et. al. [[2]](#references) we expect 
+We also investigate the behaviour of our numerical solution *across* the free boundary away from maturity. Again, classical theory tells us that the solution $V$ is smooth in the continuation region away from maturity, but across the free boundary there is a loss of regularity at second order in space and first order in time. More precisely, by Jaillet et al. [[2]](#references) we expect 
 
-$$ V \in C_{S,\, \text{loc}}^{1,1} C^{0,1}_{t,\,\text{loc}}((0,\infty)\times[0,T)) \quad\text{but}\quad V\not\in C_{S,\, \text{loc}}^2 C^1_{t,\,\text{loc}}((0,\infty)\times[0,T))$$
+$$ V \in C_{S,\, \text{loc}}^{1,1} C^{0,1}_{t,\,\text{loc}}((0,\infty)\times[0,T)) \quad\text{but}\quad V\not\in C_{S,\, \text{loc}}^2 C^1_{t,\,\text{loc}}((0,\infty)\times[0,T)).$$
 
-We point out that whilst continuity of $V$ is clear from the problem definition, differentiability in $S$ across the free boundary must be derived and is known as the *smooth-fit condition*. 
+We point out that whilst continuity of $V$ is clear from the set-up of the problem, differentiability in $S$ across the free boundary must be derived and is known as the *smooth-fit condition*. 
 ## Numerical analysis 
 
 ### European case
@@ -81,7 +89,7 @@ and define
 
 $$V_i^n = V(S_i, \tau_n).$$
 
-We start with a fully implicit scheme in which the time derivative is approximated at $t_{n+1}$ using a backward difference and the spatial derivatives are approximated at $t_{n+1}$ using central differences. This is in contrast to a computationally cheaper but less stable fully explicit scheme which uses forward differences at time $t_n$ (other numerical schemes with favourable properties are also available, such as the Crank-Nicolson method which uses central differences at time $t_{n+\frac{1}{2}}$). Substituting the approximations
+We use a fully implicit scheme in which the time derivative is approximated at $t_{n+1}$ using a backward difference and the spatial derivatives are approximated at $t_{n+1}$ using central differences. This is in contrast to a computationally cheaper but less stable fully explicit scheme which uses forward differences at time $t_n$ (other numerical schemes with favourable properties are also available, such as the Crank-Nicolson method which uses central differences at time $t_{n+\frac{1}{2}}$). Substituting the approximations
 
 $$\frac{\partial V}{\partial S}(S_i, \tau_{n+1}) \approx \frac{V_{i+1}^{n+1} - V_{i-1}^{n+1}}{2\Delta S} \qquad (i=1,\dots,M-1, \quad n = 0, \dots, N-1),$$
 
@@ -196,53 +204,100 @@ the PSOR update is given by
 
 $$ \widetilde{V}_i^{n, (k+1)} = \max\bigl\{V_{i,\omega}^{n, (k+1)}, \,\, (K-S_i)^+ \bigr\}.$$
 
-This agrees with the Gauss-Seidel method with projection when $\omega = 1$, and is referred to as `over-relaxed' when $\omega > 1$. We note that although choosing $\omega > 1$ may speed up convergence, choosing $\omega$ too large can cause instabilities and failure to converge. 
+This agrees with the Gauss-Seidel method with projection when $\omega = 1$, and is referred to as 'over-relaxed' when $\omega > 1$. We note that although choosing $\omega > 1$ may speed up convergence, choosing $\omega$ too large can cause instabilities and failure to converge. 
 
 
-## The code and its outputs
+## Project structure and outputs
 
-### European case
+
+
+```
+american_options/
+├── README.md
+├── pyproject.toml
+├── images/                     # generated figures used in the README
+└── src/
+    ├── european_fdm.py         # implicit FDM solver for the European put
+    ├── american_fdm.py         # PSOR solver and free-boundary extraction for American put
+    ├── greeks.py               # Delta and Gamma computations
+    ├── plotting_functions.py   # plotting functions
+    └── main.py                 # runs experiments and generates figures
+```
+
+`main.py` is split into four sections. Parameters are set in the first section. The second section invokes the relevant functions in `european_fdm.py`, `american_fdm.py` and `greeks.py` to compute numerical solutions, Greeks and free boundaries with these parameters. The third section invokes the relevant functions in `plotting_functions.py` to produce plots of these numerical solutions, Greeks and free boundaries. The fourth section loops through the list of volatilities and rates specified in the first section and produces comparative plots of the free boundaries. 
+
+We now describe the functions in `european_fdm.py`, `american_fdm.py` and `greeks.py`, displaying the relevant plots produced by `main.py` as we go and explaining how they relate to the background material above. All plots are produced using the following default parameters in `main.py`:
+
+<pre>
+K = 100             #strike price
+S_max = 4*K         #truncation for S-domain
+T = 1.0             #initial time to maturity
+r = 0.05            #interest rate
+sigma = 0.2         #volatility
+M = 1000            #number of spatial increments
+N = 1000            #number of temporal increments
+
+error_start = 20    #first mesh size for computing errors in European case
+error_stop = 800    #last mesh size for computing errors in European case
+error_step = 8      #increments in mesh size for computing errors in European case
+
+omega = 1.2         #over-relaxation parameter in PSOR
+tol1 = 1e-8         #threshold for asserting convergence in PSOR
+max_iter = 10_000   #maximum number of iterations per time slice in PSOR
+tol2 = 1e-6         #tolerance to deal with potential numerical instabilities extracting the free boundary
+
+tau_min = 0.0       #lower cutoff for studying asymptotics of free boundary near maturity
+tau_max = 0.1       #upper cutoff for studying asymptotics of free boundary near maturity
+
+Gamma_cutoff = 200  #number of temporal increments to skip near maturity when computing Gamma
+
+sigmas = [0.1, 0.2, 0.3, 0.4]           #volatilities to loop over when comparing free boundaries
+rates = [0.01, 0.03, 0.05, 0.07]        #interest rates to loop over when comparing free boundaries
+M1 = 1000                                #number of spatial increments when comparing free boundaries 
+N1 = 1000                                #number of temporal increments when comparing free boundaries
+</pre>
+
+
 
 `european_fdm.py` contains three functions: 
 
-1. `european_put_implicit_fdm` uses the fully implicit scheme described above to compute an approximate solution to the Black-Scholes equation in the case of a European put option. It takes as input `S_max, K, T, r sigma, M, N`, all of which have been defined above. 
+1. `european_put_implicit_fdm` uses the fully implicit scheme described above to compute an approximate solution to the Black-Scholes equation in the case of a European put option. It takes as input `S_max, K, T, r sigma, M, N`. 
 
 2. `european_put_closed_form` computes the exact solution to the Black-Scholes equation in the case of a European put option using the closed form solution given above. It takes as input `S, K, T, r, sigma`. 
 
 3. `european_put_closed_form_sampled` takes the same inputs as `european_put_implicit_fdm` and samples the exact solution returned by `european_put_closed_form` on the corresponding grid points. This allows for comparisions between the approximate and exact solutions. 
 
-The following is a plot of both the approximate FDM solution and the sampled exact solution at $t=0$ with $M = N = 500$; as one might hope, these are virtually indistinguishable:
+The following is a plot of both our approximate solution obtained using finite differences and  the exact solution sampled at the same points at $t=0$; as one might hope, these are virtually indistinguishable:
 
 <p align="center">
   <img src="images/European_put_option_value_at_$t=0$_as_a_function_of_S_-_FDM_vs_exact_solution.png" width="800" alt="European curve">
 </p>
 
-The surface plots for $0 \leq \tau \leq T$ are also essentially indistinguishable: 
+The surface plots displaying the price as function of $S$ and $t$ also appear to coincide quite closely: 
 
 <p align="center">
   <img src="images/European_put_option_value_as_a_function_of_the_S_and_tau_-_FDM_vs_exact_solution.png" width="800" alt="European surface">
 </p>
 
 
-We also plot $\|V_\text{FDM} - V_\text{exact}\|_{L^\infty(\text{mesh})}$ as a function of $1/M$ (with $M = N$):
+To get a better idea of the accuracy of our approximate solution as a function of mesh size, `plotting_functions.py` contains a function `plot_errors_by_meshsize`, which computes and plots $\|V_\text{FDM} - V_\text{exact}\|_{L^\infty(\text{mesh})}$ as a function of $1/M$ (with $M = N$), starting at `error_start` and increasing in steps of `error_step` up to `error_stop`:
 
 <p align="center">
   <img src="images/meshsize_errors.png" width="800" alt="Errors">
 </p>
 
-### American case
 
-`american_fdm.py` contains three functions:
+`american_fdm.py` also contains three functions:
 
 1. `american_put_implicit_psor` uses the PSOR scheme explained above to compute an approximate solution to the Black-Scholes equation in the case of an American put option. In addition to the arguments `S_max, K, T, r, sigma, M, N` in the European case, it also contains the arguments `omega, tol, max_iter`. Here, `omega` is the over-relaxtion parameter, `tol` is a small number resembling a threshold for convergence, and `max_iter` determines the maximum number of times we cycle through the solution vector at each time slice in the event our convergence criterion is not met. 
 
 2. `extract_free_boundary` extracts for each time slice the grid value of $S$ below which the holder should exercise. It also returns the corresponding option value $V$, which is used to project the free boundary curve onto the surface of the solution. It takes as input the partition `S_partition` of the $S$-domain, the approximate solution `V`, the strike price `K` and a tolerance `tol` which is used to deal with potential numerical instabilities near the free boundary.
 
-3. `theoretical_asymptotic` restricts to a smaller timeframe near maturity and constructs the theoretical asymptotic value $\sigma K \sqrt{\tau |\ln \tau|}$. 
+3. `theoretical_asymptote` constructs the theoretical asymptotic value $\sigma K \sqrt{\tau |\ln \tau|}$ in a neighbourhood of $\tau = 0$. 
 
 
 
-We first plot our numerical solutions for both the European and American put options at $t=0$: 
+We now plot our numerical solutions for both the European and American put options at $t=0$: 
 
 <p align="center">
   <img src="images/American_(PSOR)_vs_European_(FDM)_put_option_values_at_$t=0$.png" width="800" alt="American vs European">
@@ -254,9 +309,9 @@ As we know to be the case analytically, the value of the American option lies ab
   <img src="images/American_(PSOR)_minus_European_(FDM)_put_option_value_at_$t=0$.png" width="800" alt="American minus European curve">
 </p>
 
-As expected, the gap is close to zero for large $S$ (since both options are essentially worthless in this region). On the other hand, for small values of $S$, the American put is worth $K-S$ (since it is optimal to exercise immediately) whereas the European put is worth roughly $Ke^{-rT} - S$ (since it is very likely to finish in the money). Therefore their difference is worth roughly the constant value $K(1-e^{-rT})$. In between these two extreme regimes for $S$ lies the free boundary threshold value (denoted with the dashed line), and it is around this value that we see the sharpest changes in the gap. 
+As expected, the gap is close to zero for large $S$ (since both options are close to worthless in this region). On the other hand, for small values of $S$, the American put is worth $K-S$ (since it is optimal to exercise immediately) whereas the European put is worth roughly $Ke^{-rT} - S$ (since it is very likely to finish in the money). Therefore their difference is worth roughly the constant value $K(1-e^{-rT})$. In between these two regimes lies the free boundary threshold value (denoted with the dashed line), and it is around this value that we see the sharpest changes in the gap. 
 
-Before considering surface plots of the American put option and studying Delta and Gamma, we turn to the free boundary curve. We first plot the curve itself extracted from our PSOR scheme:
+Before considering surface plots of the American put option and studying the Delta and Gamma, we turn to the free boundary curve. We first plot the curve itself extracted from our PSOR scheme:
 
 <p align="center">
   <img src="images/approx_free_boundary.png" width="800" alt="Free boundary">
@@ -268,7 +323,7 @@ The next plot compares our extracted free boundary curve (more precisely, the st
   <img src="images/asymptotics_near_maturity.png" width="800" alt="Asymptotics near maturity">
 </p>
 
-In some of the following plots, we project the free boundary value(s) onto the curves/surfaces when it is illustrative to do so. We continue with the following surface plot of the American put option with the free boundary projection:
+In some of the following plots, we project the free boundary value(s) onto the curves/surfaces when it is illustrative to do so. We continue with a surface plot of the American put option with the free boundary projection:
 
 
 
@@ -282,7 +337,9 @@ The following surface plot of the excess of the American option price over the E
   <img src="images/American_(PSOR)_minus_European_(FDM)_put_option_value_as_a_function_of_S_and_tau.png" width="800" alt="American minus European surface">
 </p>
 
-We now move on to study the regularity of our numerical solution across the free boundary away from maturity. Recall that we expect $\Delta = \frac{\partial V}{\partial S}$ to be continuous (in fact Lipschitz with Lipschitz norm -1) across the free boundary by the smooth-fit condition, but $\Gamma = \frac{\partial^2 V}{\partial S^2}$ is expected to admit a jump from zero in the exercise region to positive values in the continutation region. We begin with a plot of Delta at $t=0$ for both the European and American put options, demonstrating a genuine qualitative difference between the solutions that may not have been evident from the plots above: 
+We now move on to study the regularity of our numerical solution across the free boundary away from maturity. Recall that we expect $\Delta = \frac{\partial V}{\partial S}$ to be continuous (in fact Lipschitz with Lipschitz norm -1) across the free boundary by the smooth-fit condition, but $\Gamma = \frac{\partial^2 V}{\partial S^2}$ is expected to admit a jump from zero in the exercise region to uniformly positive values in the continutation region. These quantities are computed in `greeks.py`, which contains the single function `compute_greeks` and computes Delta and Gamma at interior points using central differences.
+
+We begin with a plot of Delta at $t=0$ for both the European and American put options, demonstrating a genuine qualitative difference between the solutions that may not have been evident from the plots above: 
 
 
 <p align="center">

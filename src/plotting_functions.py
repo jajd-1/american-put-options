@@ -134,7 +134,7 @@ def plot_free_boundary(tau_partition, boundary_S):
 
 
 def plot_near_expiry_asymptotic(tau_partition, boundary_S, K, sigma, tau_min = 0.0, tau_max = 0.1):
-    tau, departure, asymptote = afdm.theoretical_asymptotic(tau_partition, boundary_S, K, sigma, tau_min = tau_min, tau_max = tau_max)
+    tau, departure, asymptote = afdm.theoretical_asymptote(tau_partition, boundary_S, K, sigma, tau_min = tau_min, tau_max = tau_max)
 
     plt.figure(figsize = (10, 6))
     plt.plot(tau, departure, color = 'black', linewidth = 2, label=r'$K-S^*(\tau)$ from PSOR')

@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def american_put_implicit_psor(S_max, K, T, r, sigma, M = 500, N = 500, omega = 1.2, tol = 1e-8, max_iter = 10_000):
+def american_put_implicit_psor(S_max, K, T, r, sigma, M = 1000, N = 1000, omega = 1.2, tol = 1e-8, max_iter = 10_000):
     dtau = T/N 
 
     S_partition = np.linspace(0, S_max, M+1)
@@ -55,7 +55,7 @@ def american_put_implicit_psor(S_max, K, T, r, sigma, M = 500, N = 500, omega = 
     return S_partition, tau_partition, V 
 
 
-def extract_free_boundary(S_partition, V, K, tol = 1e-6):     #this method gives a jagged free boundary even for small mesh sizes
+def extract_free_boundary(S_partition, V, K, tol = 1e-6):
     threshold = np.maximum(K - S_partition, 0)
 
     boundary_S = np.full(V.shape[0], np.nan)
@@ -75,7 +75,7 @@ def extract_free_boundary(S_partition, V, K, tol = 1e-6):     #this method gives
 
 
 
-def theoretical_asymptotic(tau_partition, boundary_S, K, sigma, tau_min=0.0, tau_max=0.1):
+def theoretical_asymptote(tau_partition, boundary_S, K, sigma, tau_min=0.0, tau_max=0.1):
     mask = (~np.isnan(boundary_S)) & (tau_partition > tau_min) & (tau_partition <= tau_max) & (boundary_S < K)
     tau = tau_partition[mask]
     departure = K - boundary_S[mask]

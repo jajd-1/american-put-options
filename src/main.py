@@ -8,11 +8,44 @@ import american_fdm as afdm
 import plotting_functions as plfn
 import greeks as gr
 
-S_partition1, tau_partition1, V_fdm = efdm.european_put_implicit_fdm(400, 100, 1.0, 0.05, 0.2, 1000, 1000)
-S_partition2, tau_partition2, V_exact = efdm.european_put_closed_form_sampled(400, 100, 1.0, 0.05, 0.2, 1000, 1000)
-S_partition3, tau_partition3, V_psor = afdm.american_put_implicit_psor(400, 100, 1.0, 0.05, 0.2, 1000, 1000)
+# ------- PARAMETERS -------
 
-boundary_S, boundary_V = afdm.extract_free_boundary(S_partition3, V_psor, 100)
+K = 100             #strike price
+S_max = 4*K         #truncation for S-domain
+T = 1.0             #initial time to maturity
+r = 0.05            #interest rate
+sigma = 0.2         #volatility
+M = 1000            #number of spatial increments
+N = 1000            #number of temporal increments
+
+error_start = 20    #first mesh size for computing errors in European case
+error_stop = 800    #last mesh size for computing errors in European case
+error_step = 8      #increments in mesh size for computing errors in European case
+
+omega = 1.2         #over-relaxation parameter in PSOR
+tol1 = 1e-8         #threshold for asserting convergence in PSOR
+max_iter = 10_000   #maximum number of iterations per time slice in PSOR
+tol2 = 1e-6         #tolerance to deal with potential numerical instabilities extracting the free boundary
+
+tau_min = 0.0       #lower cutoff for studying asymptotics of free boundary near maturity
+tau_max = 0.1       #upper cutoff for studying asymptotics of free boundary near maturity
+
+Gamma_cutoff = 200  #number of temporal increments to skip near maturity when computing Gamma
+
+sigmas = [0.1, 0.2, 0.3, 0.4]           #volatilities to loop over when comparing free boundaries
+rates = [0.01, 0.03, 0.05, 0.07]        #interest rates to loop over when comparing free boundaries
+M1 = 1000                                #number of spatial increments when comparing free boundaries 
+N1 = 1000                                #number of temporal increments when comparing free boundaries
+
+
+
+# ------- COMPUTE NUMERICAL SOLUTIONS, FREE BOUNDARIES AND GREEKS --------
+
+S_partition1, tau_partition1, V_fdm = efdm.european_put_implicit_fdm(S_max, K, T, r, sigma, M, N)
+S_partition2, tau_partition2, V_exact = efdm.european_put_closed_form_sampled(S_max, K, T, r, sigma, M, N)
+S_partition3, tau_partition3, V_psor = afdm.american_put_implicit_psor(S_max, K, T, r, sigma, M, N)
+
+boundary_S, boundary_V = afdm.extract_free_boundary(S_partition3, V_psor, K)
 
 Delta_am, Gamma_am = gr.compute_greeks(S_partition3, V_psor)
 Delta_eur, Gamma_eur = gr.compute_greeks(S_partition1, V_fdm) 
@@ -27,6 +60,9 @@ for n in range(len(boundary_S)):
             boundary_Delta_am[n] = Delta_am[n, i[0]]
             boundary_Gamma_am[n] = Gamma_am[n, i[0]]
 
+
+
+# ------- PLOTS WITH FIXED PARAMETERS --------
 
 plfn.plot_option_surface(S_partition1, tau_partition1, V_fdm, S_partition2, tau_partition2, V_exact,
                     label1 = 'Finite difference approximation',
@@ -45,13 +81,13 @@ plfn.plot_option_curve(S_partition1, V_fdm, S_partition2, V_exact,
                     title = 'European put option value at $t=0$ as a function of S - FDM vs exact solution')
 
 
-#plfn.plot_errors_by_meshsize(20, 800, 8)
+plfn.plot_errors_by_meshsize(error_start, error_stop, error_step)
 
 
 plfn.plot_free_boundary(tau_partition3, boundary_S)
 
-plfn.plot_near_expiry_asymptotic(tau_partition3, boundary_S, 100, 0.2, tau_min=0.0, tau_max=0.1)
 
+plfn.plot_near_expiry_asymptotic(tau_partition3, boundary_S, K, sigma, tau_min, tau_max)
 
 
 plfn.plot_option_curve(S_partition1, V_fdm, S_partition3, V_psor,
@@ -110,34 +146,34 @@ plfn.plot_option_curve(S_partition3, Gamma_eur, S_partition1, Gamma_am,
                        vline = boundary_S[-1])
 
 
-plfn.plot_option_surface(S_partition3, tau_partition3[200:], Gamma_am[200:, :], 
+plfn.plot_option_surface(S_partition3, tau_partition3[Gamma_cutoff:], Gamma_am[Gamma_cutoff:, :], 
                         xlabel = 'Time to maturity $\\tau$',
                         ylabel = 'Underlying price $S$',
                         zlabel = 'Gamma', 
                         title = 'Gamma of American put option (PSOR) as function of $S$ and $tau$')
 
 
-# -------- Parameter variation ---------
 
-sigmas = [0.1, 0.2, 0.3, 0.4]
-boundary_dict = {}
+# -------- PLOTS WITH VARYING PARAMETERS ---------
 
-for sigma in sigmas:
-    S_partition, tau_partition, V = afdm.american_put_implicit_psor(400, 100, 1.0, 0.05, sigma, 500, 500)
-    boundary_S, _ = afdm.extract_free_boundary(S_partition, V, 100)
-    boundary_dict[sigma] = (S_partition, tau_partition, V, boundary_S)
+boundary_dict1 = {}
 
-plfn.plot_free_boundary_family(boundary_dict, parameter_symbol = r'\sigma')
-plfn.plot_option_curve_family(boundary_dict, parameter_symbol = r'\sigma')
+for vol in sigmas:
+    S_partition, tau_partition, V = afdm.american_put_implicit_psor(S_max, K, T, r, vol, M1, N1)
+    boundary_S, _ = afdm.extract_free_boundary(S_partition, V, K)
+    boundary_dict1[vol] = (S_partition, tau_partition, V, boundary_S)
+
+plfn.plot_free_boundary_family(boundary_dict1, parameter_symbol = r'\sigma')
+plfn.plot_option_curve_family(boundary_dict1, parameter_symbol = r'\sigma')
 
 
-rates = [0.01, 0.03, 0.05, 0.07]
-boundary_dict = {}
 
-for r in rates:
-    S_partition, tau_partition, V = afdm.american_put_implicit_psor(400, 100, 1.0, r, 0.2, 500, 500)
-    boundary_S, _ = afdm.extract_free_boundary(S_partition, V, 100)
-    boundary_dict[r] = (S_partition, tau_partition, V, boundary_S)
+boundary_dict2 = {}
 
-plfn.plot_free_boundary_family(boundary_dict, parameter_symbol = 'r')
-plfn.plot_option_curve_family(boundary_dict, parameter_symbol = 'r')
+for rate in rates:
+    S_partition, tau_partition, V = afdm.american_put_implicit_psor(S_max, K, T, rate, sigma, M1, N1)
+    boundary_S, _ = afdm.extract_free_boundary(S_partition, V, K)
+    boundary_dict2[rate] = (S_partition, tau_partition, V, boundary_S)
+
+plfn.plot_free_boundary_family(boundary_dict2, parameter_symbol = 'r')
+plfn.plot_option_curve_family(boundary_dict2, parameter_symbol = 'r')
