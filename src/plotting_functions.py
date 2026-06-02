@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.patches as mpatches
 import european_fdm as efdm
+import american_fdm as afdm
 from pathlib import Path
 
 script_dir = Path(__file__).resolve().parent.parent
@@ -10,8 +11,8 @@ images_dir = script_dir/'images'
 
 
 def plot_option_surface(S_partition1, tau_partition1, V1, S_partition2 = None, tau_partition2 = None, V2 = None, stride = 1, 
-                        label1 = '', label2 = '', xlabel = '', ylabel = '', zlabel = '', title = '', 
-                        american = False, boundary_S = None, boundary_V = None, projection_height = 0, connector_step = 20):
+                        label1 = '', label2 = '', xlabel = '', ylabel = '', zlabel = '', title = '', view = (22, 34, 0),
+                        american = False, boundary_S = None, boundary_V = None, projection_height = 0, connector_step = 30):
     
     fig = plt.figure(figsize = (10, 8))
     ax = fig.add_subplot(111, projection = '3d')
@@ -52,6 +53,7 @@ def plot_option_surface(S_partition1, tau_partition1, V1, S_partition2 = None, t
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     ax.set_title(title)
+    ax.view_init(elev = view[0], azim = view[1], roll = view[2])
     plt.tight_layout()
 
     filename = title.replace(' ', '_') + '.png'
@@ -60,7 +62,7 @@ def plot_option_surface(S_partition1, tau_partition1, V1, S_partition2 = None, t
     plt.show()
 
 
-def plot_option_curve(S_partition1, V1, S_partition2 = None, V2 = None, label1 = '', label2 = '', xlabel = '', ylabel = '', title = ''):
+def plot_option_curve(S_partition1, V1, S_partition2 = None, V2 = None, label1 = '', label2 = '', xlabel = '', ylabel = '', title = '', vline = None):
     fig = plt.figure(figsize = (10,6))
 
     plt.plot(S_partition1, V1[-1, :], label = label1, color = 'red')
@@ -71,6 +73,9 @@ def plot_option_curve(S_partition1, V1, S_partition2 = None, V2 = None, label1 =
         else:
             plt.plot(S_partition1, V2[-1, :], label = label2, color = 'blue')
             
+    if vline is not None: 
+        plt.axvline(vline, color = 'black', linestyle = '--', alpha = 0.4, label = 'Free boundary value of $S$')
+
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
@@ -114,12 +119,42 @@ def plot_free_boundary(tau_partition, boundary_S):
     plt.ylabel('Exercise threshold')
     plt.title('Approximate free boundary for an American put option')
     plt.grid(True)
+
+    # ymin = np.min(boundary_S)
+    # ymax = np.max(boundary_S)
+    # padding = 10 
+    # plt.ylim(ymin - padding, ymax + padding)
+
     plt.tight_layout()
 
     filename = 'approx_free_boundary.png'
     plt.savefig(images_dir/filename, dpi = 300, bbox_inches = 'tight')
 
     plt.show()
+
+
+def plot_near_expiry_asymptotic(tau_partition, boundary_S, K, sigma, tau_min = 0.0, tau_max = 0.1):
+    tau, departure, asymptote = afdm.theoretical_asymptotic(tau_partition, boundary_S, K, sigma, tau_min = tau_min, tau_max = tau_max)
+
+    plt.figure(figsize = (10, 6))
+    plt.plot(tau, departure, color = 'black', linewidth = 2, label=r'$K-S^*(\tau)$ from PSOR')
+    plt.plot(tau, asymptote, linestyle='--', linewidth=2, label=r'Theoretical asymptote $\sigma K \sqrt{\tau |\ln \tau|}$')
+
+    plt.xlabel(r'Time to maturity $\tau$')
+    plt.ylabel(r'$K-S^*(\tau)$')
+    plt.title(r'Asymptotic comparision near maturity')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+    filename = 'asymptotics_near_maturity.png'
+    plt.savefig(images_dir/filename, dpi = 300, bbox_inches = 'tight')
+
+    plt.show()
+    
+
+
+
 
 
 # ------ Family plots -------
