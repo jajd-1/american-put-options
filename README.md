@@ -30,7 +30,7 @@ with terminal condition $V(S,T) = (K-S)^+$. Here, $\sigma$ denotes the volatilit
 
 Making the substitutions
 
-$$\tau = T - t, \quad u = Se^{r\tau} \quad \text{and}\quad x = \ln\bigg(\frac{S}{K}\bigg) + \bigg(r - \frac{1}{2}\sigma^2\bigg)\tau$$
+$$\tau = T - t, \quad u = Ve^{r\tau} \quad \text{and}\quad x = \ln\bigg(\frac{S}{K}\bigg) + \bigg(r - \frac{1}{2}\sigma^2\bigg)\tau$$
 
 transforms the Black-Scholes equation into the 1D heat equation
 
@@ -38,11 +38,11 @@ $$\frac{\partial u}{\partial \tau} = \frac{1}{2}\sigma^2 \frac{\partial^2 u}{\pa
 
 which can be solved uniquely and in closed form. Transforming back into the original variables thus yields the explicit solution
 
-$$V(S,t) = K e^{-rt}N(-d_2) - SN(-d_1),$$
+$$V(S,t) = K e^{-r(T-t)}N(-d_2) - SN(-d_1),$$
 
 where $N$ is the CDF of the standard normal distribution and 
 
-$$d_1 = \frac{\ln\big(\frac{S}{K}\big) + \big(r + \frac{\sigma^2}{2}\big)t}{\sigma\sqrt{t}}, \quad d_2 = d_1 - \sigma\sqrt{t}.$$
+$$d_1 = \frac{\ln\big(\frac{S}{K}\big) + \big(r + \frac{\sigma^2}{2}\big)(T-t)}{\sigma\sqrt{T-t}}, \quad d_2 = d_1 - \sigma\sqrt{T-t}.$$
 
 ### American case
 
