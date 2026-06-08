@@ -2,7 +2,7 @@ import numpy as np
 from statistics import NormalDist
 from scipy.linalg import solve_banded
 
-def european_put_implicit_fdm(S_max, K, T, r, sigma, M = 500, N = 500):
+def european_put_implicit_fdm(S_max, K, T, r, sigma, M = 1000, N = 1000):
     dtau = T/N 
 
     S_partition = np.linspace(0, S_max, M+1)
@@ -50,7 +50,7 @@ def european_put_closed_form(S, K, T, r, sigma):
     return K * np.exp(-r * T) * N(-d2) - S * N(-d1)
 
 
-def european_put_closed_form_sampled(S_max, K, T, r, sigma, M = 500, N = 500):
+def european_put_closed_form_sampled(S_max, K, T, r, sigma, M = 1000, N = 1000):
     S_partition = np.linspace(0, S_max, M+1)
     tau_partition = np.linspace(0, T, N+1)
     V = np.zeros((N+1, M+1))      

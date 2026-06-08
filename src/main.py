@@ -15,8 +15,8 @@ S_max = 4*K         #truncation for S-domain
 T = 1.0             #initial time to maturity
 r = 0.05            #interest rate
 sigma = 0.2         #volatility
-M = 1000            #number of spatial increments
-N = 1000            #number of temporal increments
+M = 5000            #number of spatial increments
+N = 5000            #number of temporal increments
 
 error_start = 20    #first mesh size for computing errors in European case
 error_stop = 800    #last mesh size for computing errors in European case
@@ -32,148 +32,149 @@ tau_max = 0.1       #upper cutoff for studying asymptotics of free boundary near
 
 Gamma_cutoff = 200  #number of temporal increments to skip near maturity when computing Gamma
 
-sigmas = [0.1, 0.2, 0.3, 0.4]           #volatilities to loop over when comparing free boundaries
-rates = [0.01, 0.03, 0.05, 0.07]        #interest rates to loop over when comparing free boundaries
-M1 = 1000                                #number of spatial increments when comparing free boundaries 
-N1 = 1000                                #number of temporal increments when comparing free boundaries
+sigmas = [0.1, 0.2, 0.3, 0.4]            #volatilities to loop over when comparing free boundaries
+rates = [0.01, 0.03, 0.05, 0.07]         #interest rates to loop over when comparing free boundaries
+M1 = 2000                                #number of spatial increments when comparing free boundaries 
+N1 = 2000                                #number of temporal increments when comparing free boundaries
 
+european = True                     #run code for pricing and plotting European put options
+error_vs_mesh = True                #run code for plotting error in FDM solution as a function of mesh size
+american = True                     #run code for pricing and plotting American put options
+greeks = True                       #run code for computing and plotting Greeks (requires american = True and european = True)
+param_variation = True              #run code for computing and plotting free boundary as volatility and interest rate are varied
 
 
 # ------- COMPUTE NUMERICAL SOLUTIONS, FREE BOUNDARIES AND GREEKS --------
 
-S_partition1, tau_partition1, V_fdm = efdm.european_put_implicit_fdm(S_max, K, T, r, sigma, M, N)
-S_partition2, tau_partition2, V_exact = efdm.european_put_closed_form_sampled(S_max, K, T, r, sigma, M, N)
-S_partition3, tau_partition3, V_psor = afdm.american_put_implicit_psor(S_max, K, T, r, sigma, M, N)
+if european:
+    S_partition1, tau_partition1, V_fdm = efdm.european_put_implicit_fdm(S_max, K, T, r, sigma, M, N)
+    S_partition2, tau_partition2, V_exact = efdm.european_put_closed_form_sampled(S_max, K, T, r, sigma, M, N)
 
-boundary_S, boundary_V = afdm.extract_free_boundary(S_partition3, V_psor, K)
+if american:
+    S_partition3, tau_partition3, V_psor = afdm.american_put_implicit_psor(S_max, K, T, r, sigma, M, N)
+    boundary_S, boundary_V = afdm.extract_free_boundary(S_partition3, V_psor, K)
 
-Delta_am, Gamma_am = gr.compute_greeks(S_partition3, V_psor)
-Delta_eur, Gamma_eur = gr.compute_greeks(S_partition1, V_fdm) 
+if greeks:
+    if not (american and european):
+        raise ValueError('Greeks plots requires both American and European plots')
+    
+    Delta_am, Gamma_am = gr.compute_greeks(S_partition3, V_psor)
+    Delta_eur, Gamma_eur = gr.compute_greeks(S_partition1, V_fdm) 
 
-boundary_Delta_am = np.full_like(boundary_S, np.nan, dtype = float)
-boundary_Gamma_am = np.full_like(boundary_S, np.nan, dtype = float)
+    boundary_Delta_am = np.full_like(boundary_S, np.nan, dtype = float)
+    boundary_Gamma_am = np.full_like(boundary_S, np.nan, dtype = float)
 
-for n in range(len(boundary_S)):
-    if not np.isnan(boundary_S[n]):
-        i = np.where(S_partition3 == boundary_S[n])[0]
-        if len(i) > 0:
-            boundary_Delta_am[n] = Delta_am[n, i[0]]
-            boundary_Gamma_am[n] = Gamma_am[n, i[0]]
-
+    for n in range(len(boundary_S)):
+        if not np.isnan(boundary_S[n]):
+            i = np.where(S_partition3 == boundary_S[n])[0]
+            if len(i) > 0:
+                boundary_Delta_am[n] = Delta_am[n, i[0]]
+                boundary_Gamma_am[n] = Gamma_am[n, i[0]]
 
 
 # ------- PLOTS WITH FIXED PARAMETERS --------
 
-plfn.plot_option_surface(S_partition1, tau_partition1, V_fdm, S_partition2, tau_partition2, V_exact,
-                    label1 = 'Finite difference approximation',
-                    label2 = 'Exact solution (sampled on mesh vertices)',
-                    xlabel = 'Time to maturity $\\tau$',
-                    ylabel = 'Underlying price $S$',
-                    zlabel = 'European put option value $V$', 
-                    title = 'European put option value as a function of the S and tau - FDM vs exact solution')
+if european:
+    plfn.plot_option_surface(S_partition1, tau_partition1, V_fdm, S_partition2, tau_partition2, V_exact,
+                        label1 = 'Finite difference approximation',
+                        label2 = 'Exact solution (sampled on mesh vertices)',
+                        xlabel = 'Time to maturity $\\tau$',
+                        ylabel = 'Underlying price $S$',
+                        zlabel = 'European put option value $V$', 
+                        title = 'European put option value as a function of the S and tau - FDM vs exact solution')
 
+    plfn.plot_option_curve(S_partition1, V_fdm, S_partition2, V_exact,
+                        label1 = 'Finite difference approximation',
+                        label2 = 'Exact solution (sampled on partition points)',
+                        xlabel = 'Underlying price $S$',
+                        ylabel = 'European put option value at $t=0$',
+                        title = 'European put option value at $t=0$ as a function of S - FDM vs exact solution')
 
-plfn.plot_option_curve(S_partition1, V_fdm, S_partition2, V_exact,
-                    label1 = 'Finite difference approximation',
-                    label2 = 'Exact solution (sampled on partition points)',
-                    xlabel = 'Underlying price $S$',
-                    ylabel = 'European put option value at $t=0$',
-                    title = 'European put option value at $t=0$ as a function of S - FDM vs exact solution')
+if error_vs_mesh:
+    plfn.plot_errors_by_meshsize(error_start, error_stop, error_step, S_max, K, T, r, sigma)
 
+if american: 
+    plfn.plot_free_boundary(tau_partition3, boundary_S)
 
-plfn.plot_errors_by_meshsize(error_start, error_stop, error_step)
+    plfn.plot_near_expiry_asymptotic(tau_partition3, boundary_S, K, sigma, tau_min, tau_max)
 
-
-plfn.plot_free_boundary(tau_partition3, boundary_S)
-
-
-plfn.plot_near_expiry_asymptotic(tau_partition3, boundary_S, K, sigma, tau_min, tau_max)
-
-
-plfn.plot_option_curve(S_partition1, V_fdm, S_partition3, V_psor,
-                    label1 = 'European',
-                    label2 = 'American',
-                    xlabel = 'Underlying $S$',
-                    ylabel = 'Option value at $t=0$',
-                    title = 'American (PSOR) vs European (FDM) put option values at $t=0$')
-
-
-plfn.plot_option_curve(S_partition1, V_psor - V_fdm,
-                    xlabel = 'Underlying price $S$',
-                    ylabel = 'Price difference at $t=0$ (American minus European)',
-                    title = 'American (PSOR) minus European (FDM) put option value at $t=0$', 
-                    vline = boundary_S[-1])
-
-
-plfn.plot_option_surface(S_partition1, tau_partition1, V_psor, 
+    plfn.plot_option_surface(S_partition3, tau_partition3, V_psor, 
                     xlabel = 'Time to maturity $\\tau$',
                     ylabel = 'Underlying price $S$',
                     zlabel = 'American put option value $V$', 
                     title = 'American put option value as a function of S and tau, with free boundary', 
                     american = True, boundary_S = boundary_S, boundary_V = boundary_V)
+    
+    if european:
+        plfn.plot_option_curve(S_partition1, V_fdm, S_partition3, V_psor,
+                            label1 = 'European',
+                            label2 = 'American',
+                            xlabel = 'Underlying $S$',
+                            ylabel = 'Option value at $t=0$',
+                            title = 'American (PSOR) vs European (FDM) put option values at $t=0$')
 
+        plfn.plot_option_curve(S_partition1, V_psor - V_fdm,
+                            xlabel = 'Underlying price $S$',
+                            ylabel = 'Price difference at $t=0$ (American minus European)',
+                            title = 'American (PSOR) minus European (FDM) put option value at $t=0$', 
+                            vline = boundary_S[-1])
 
-plfn.plot_option_surface(S_partition1, tau_partition1, V_psor - V_fdm, view = (22, 146, 0),
-                    xlabel = 'Time to maturity $\\tau$',
-                    ylabel = 'Underlying price $S$',
-                    zlabel = 'Price difference (American minus European)', 
-                    title = 'American (PSOR) minus European (FDM) put option value as a function of S and tau')
+        plfn.plot_option_surface(S_partition1, tau_partition1, V_psor - V_fdm, view = (22, 146, 0),
+                            xlabel = 'Time to maturity $\\tau$',
+                            ylabel = 'Underlying price $S$',
+                            zlabel = 'Price difference (American minus European)', 
+                            title = 'American (PSOR) minus European (FDM) put option value as a function of S and tau')
 
+if greeks:
+    plfn.plot_option_curve(S_partition1, Delta_eur, S_partition3, Delta_am,
+                        label1 = 'European',
+                        label2 = 'American',
+                        xlabel = 'Underlying price $S$',
+                        ylabel = 'Delta at $t=0$', 
+                        title = 'Delta of European (FDM) and American (PSOR) put option at $t=0$', 
+                        vline = boundary_S[-1])
 
-plfn.plot_option_curve(S_partition1, Delta_eur, S_partition3, Delta_am,
-                       label1 = 'European',
-                       label2 = 'American',
-                       xlabel = 'Underlying price $S$',
-                       ylabel = 'Delta at $t=0$', 
-                       title = 'Delta of European (FDM) and American (PSOR) put option at $t=0$', 
-                       vline = boundary_S[-1])
+    plfn.plot_option_surface(S_partition3, tau_partition3, Delta_am, 
+                            xlabel = 'Time to maturity $\\tau$',
+                            ylabel = 'Underlying price $S$',
+                            zlabel = 'Delta', 
+                            title = 'Delta of American put option (PSOR) as function of $S$ and $tau$, with free boundary',
+                            american = True, boundary_S = boundary_S, boundary_V = boundary_Delta_am)
 
+    plfn.plot_option_curve(S_partition1, Gamma_eur, S_partition3, Gamma_am,
+                        label1 = 'European',
+                        label2 = 'American',
+                        xlabel = 'Underlying price $S$',
+                        ylabel = 'Gamma at $t=0$', 
+                        title = 'Gamma of European (FDM) and American (PSOR) put option at $t=0$', 
+                        vline = boundary_S[-1])
 
-plfn.plot_option_surface(S_partition3, tau_partition3, Delta_am, 
-                        xlabel = 'Time to maturity $\\tau$',
-                        ylabel = 'Underlying price $S$',
-                        zlabel = 'Delta', 
-                        title = 'Delta of American put option (PSOR) as function of $S$ and $tau$, with free boundary',
-                        american = True, boundary_S = boundary_S, boundary_V = boundary_Delta_am)
-
-
-plfn.plot_option_curve(S_partition3, Gamma_eur, S_partition1, Gamma_am,
-                       label1 = 'European',
-                       label2 = 'American',
-                       xlabel = 'Underlying price $S$',
-                       ylabel = 'Gamma at $t=0$', 
-                       title = 'Gamma of European (FDM) and American (PSOR) put option at $t=0$', 
-                       vline = boundary_S[-1])
-
-
-plfn.plot_option_surface(S_partition3, tau_partition3[Gamma_cutoff:], Gamma_am[Gamma_cutoff:, :], 
-                        xlabel = 'Time to maturity $\\tau$',
-                        ylabel = 'Underlying price $S$',
-                        zlabel = 'Gamma', 
-                        title = 'Gamma of American put option (PSOR) as function of $S$ and $tau$')
-
+    plfn.plot_option_surface(S_partition3, tau_partition3[Gamma_cutoff:], Gamma_am[Gamma_cutoff:, :], 
+                            xlabel = 'Time to maturity $\\tau$',
+                            ylabel = 'Underlying price $S$',
+                            zlabel = 'Gamma', 
+                            title = 'Gamma of American put option (PSOR) as function of $S$ and $tau$')
 
 
 # -------- PLOTS WITH VARYING PARAMETERS ---------
 
-boundary_dict1 = {}
+if param_variation:
+    boundary_dict1 = {}
 
-for vol in sigmas:
-    S_partition, tau_partition, V = afdm.american_put_implicit_psor(S_max, K, T, r, vol, M1, N1)
-    boundary_S, _ = afdm.extract_free_boundary(S_partition, V, K)
-    boundary_dict1[vol] = (S_partition, tau_partition, V, boundary_S)
+    for vol in sigmas:
+        S_partition, tau_partition, V = afdm.american_put_implicit_psor(S_max, K, T, r, vol, M1, N1)
+        boundary_S, _ = afdm.extract_free_boundary(S_partition, V, K)
+        boundary_dict1[vol] = (S_partition, tau_partition, V, boundary_S)
 
-plfn.plot_free_boundary_family(boundary_dict1, parameter_symbol = r'\sigma')
-plfn.plot_option_curve_family(boundary_dict1, parameter_symbol = r'\sigma')
+    plfn.plot_free_boundary_family(boundary_dict1, parameter_symbol = r'\sigma')
+    plfn.plot_option_curve_family(boundary_dict1, parameter_symbol = r'\sigma')
 
+    boundary_dict2 = {}
 
+    for rate in rates:
+        S_partition, tau_partition, V = afdm.american_put_implicit_psor(S_max, K, T, rate, sigma, M1, N1)
+        boundary_S, _ = afdm.extract_free_boundary(S_partition, V, K)
+        boundary_dict2[rate] = (S_partition, tau_partition, V, boundary_S)
 
-boundary_dict2 = {}
-
-for rate in rates:
-    S_partition, tau_partition, V = afdm.american_put_implicit_psor(S_max, K, T, rate, sigma, M1, N1)
-    boundary_S, _ = afdm.extract_free_boundary(S_partition, V, K)
-    boundary_dict2[rate] = (S_partition, tau_partition, V, boundary_S)
-
-plfn.plot_free_boundary_family(boundary_dict2, parameter_symbol = 'r')
-plfn.plot_option_curve_family(boundary_dict2, parameter_symbol = 'r')
+    plfn.plot_free_boundary_family(boundary_dict2, parameter_symbol = 'r')
+    plfn.plot_option_curve_family(boundary_dict2, parameter_symbol = 'r')

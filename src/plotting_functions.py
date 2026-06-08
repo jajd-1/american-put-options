@@ -10,7 +10,7 @@ script_dir = Path(__file__).resolve().parent.parent
 images_dir = script_dir/'images'
 
 
-def plot_option_surface(S_partition1, tau_partition1, V1, S_partition2 = None, tau_partition2 = None, V2 = None, stride = 1, 
+def plot_option_surface(S_partition1, tau_partition1, V1, S_partition2 = None, tau_partition2 = None, V2 = None, 
                         label1 = '', label2 = '', xlabel = '', ylabel = '', zlabel = '', title = '', view = (22, 34, 0),
                         american = False, boundary_S = None, boundary_V = None, projection_height = 0, connector_step = 30):
     
@@ -91,17 +91,17 @@ def plot_option_curve(S_partition1, V1, S_partition2 = None, V2 = None, label1 =
     plt.show()
 
 
-def plot_errors_by_meshsize(start, stop, step):
+def plot_errors_by_meshsize(start, stop, step, S_max, K, T, r, sigma):
     errors = {}
 
     for n in range(start, stop, step):
-        _, _, V_fdm = efdm.european_put_implicit_fdm(400, 100, 1.0, 0.05, 0.2, n, n)             #change last entry to n*n for better mesh
-        _, _, V_exact = efdm.european_put_closed_form_sampled(400, 100, 1.0, 0.05, 0.2, n, n)    #ditto
+        _, _, V_fdm = efdm.european_put_implicit_fdm(S_max, K, T, r, sigma, n, n)             
+        _, _, V_exact = efdm.european_put_closed_form_sampled(S_max, K, T, r, sigma, n, n) 
         errors[n] = np.max(np.abs(V_fdm - V_exact))
 
     fig = plt.figure(figsize = (10,6))
     plt.plot(errors.keys(), errors.values(), marker = '')
-    plt.xlabel('Inverse mesh size')
+    plt.xlabel('Number of grid intervals ($M=N$)')
     plt.ylabel('$L^\\infty$ error')
     plt.title('$L^\\infty$ error of finite difference approximation in terms of mesh size')
     plt.grid(True)
@@ -119,12 +119,6 @@ def plot_free_boundary(tau_partition, boundary_S):
     plt.ylabel('Exercise threshold')
     plt.title('Approximate free boundary for an American put option')
     plt.grid(True)
-
-    # ymin = np.min(boundary_S)
-    # ymax = np.max(boundary_S)
-    # padding = 10 
-    # plt.ylim(ymin - padding, ymax + padding)
-
     plt.tight_layout()
 
     filename = 'approx_free_boundary.png'
@@ -152,10 +146,6 @@ def plot_near_expiry_asymptotic(tau_partition, boundary_S, K, sigma, tau_min = 0
 
     plt.show()
     
-
-
-
-
 
 # ------ Family plots -------
 

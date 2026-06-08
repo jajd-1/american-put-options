@@ -74,7 +74,6 @@ def extract_free_boundary(S_partition, V, K, tol = 1e-6):
     return boundary_S, boundary_V
 
 
-
 def theoretical_asymptote(tau_partition, boundary_S, K, sigma, tau_min=0.0, tau_max=0.1):
     mask = (~np.isnan(boundary_S)) & (tau_partition > tau_min) & (tau_partition <= tau_max) & (boundary_S < K)
     tau = tau_partition[mask]
@@ -83,48 +82,3 @@ def theoretical_asymptote(tau_partition, boundary_S, K, sigma, tau_min=0.0, tau_
 
     return tau, departure, asymptote
 
-
-
-# def extract_free_boundary_with_interpolation(S_partition, V, K, tol = 1e-6):
-#     threshold = np.maximum(K - S_partition, 0)
-
-#     boundary_S = np.full(V.shape[0], np.nan)
-#     boundary_V = np.full(V.shape[0], np.nan)
-
-#     indices = np.where(S_partition < K)[0]
-
-#     for n in range(V.shape[0]):
-#         premium = V[n, :] - threshold
-
-#         if n == 0:
-#             boundary_S[n] = K
-#             boundary_V[n] = 0
-#             continue 
-
-#         found = False 
-
-#         for i in indices[:-1]:
-#             p_left = premium[i]
-#             p_right = premium[i+1]
-
-#             if p_left <= tol and p_right > tol:
-#                 s_left = S_partition[i]
-#                 s_right = S_partition[i+1]
-
-#                 theta = (tol - p_left) / (p_right - p_left)
-#                 theta = np.clip(theta, 0, 1)
-
-#                 s_star = s_left + theta * (s_right - s_left)
-                
-#                 boundary_S[n] = s_star
-#                 boundary_V[n] = np.interp(s_star, S_partition, V[n, :])
-#                 found = True
-#                 break 
-
-#         if not found:
-#             if np.all(premium[indices] <= tol):
-#                 i = indices[-1]
-#                 boundary_S[n] = S_partition[i]
-#                 boundary_V[n] = V[n, i]
-    
-#     return boundary_S, boundary_V
